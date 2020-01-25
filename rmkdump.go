@@ -41,19 +41,23 @@ func updateIndex(idx map[string]string) {
 }
 
 func loadIndex(indexFilePath string) (idx map[string]string) {
+
+	fmt.Printf("> Loading index file from %s...\n", indexFilePath)
 	data, err := ioutil.ReadFile(indexFilePath)
 	if err != nil {
 		idx = make(map[string]string)
+		fmt.Println(">> No index file found, creating a new one")
 		return idx
 	}
 
 	err = json.Unmarshal(data, &idx)
 	if err != nil {
-		os.Remove(indexFile)
+		os.Remove(indexFilePath)
 		idx = make(map[string]string)
+		fmt.Printf(">> Corrupted index file found, creating a new one")
 		return idx
 	}
-	fmt.Printf(">> Loaded %d entries from previous backup", len(idx))
+	fmt.Printf(">> Loaded %d entries from previous backup\n", len(idx))
 	return
 }
 
@@ -97,7 +101,7 @@ func downloadID(ID string, saveFolder string, saveName string) error {
 func dumpFromRoot(backupFolder string, idx map[string]string, currentPath string, rootID string) {
 	var documentsList []Document
 
-	fmt.Println(">> Saving all from folder " + currentPath)
+	fmt.Println("> Saving all from folder " + currentPath)
 
 	resp, err := http.Get(remarkableURL + rootID)
 	if err != nil {
@@ -121,7 +125,7 @@ func dumpFromRoot(backupFolder string, idx map[string]string, currentPath string
 		if d.Type == "CollectionType" {
 			dumpFromRoot(backupFolder, idx, path.Join(currentPath, d.VissibleName), d.ID)
 		} else {
-			fmt.Printf("%s> %s: ", d.ID, path.Join(currentPath, d.VissibleName))
+			fmt.Printf(">> %s| %s: ", d.ID, path.Join(currentPath, d.VissibleName))
 
 			//Check if this needs to be synced
 			date, found := idx[d.ID]
@@ -144,9 +148,9 @@ func dumpFromRoot(backupFolder string, idx map[string]string, currentPath string
 func main() {
 	var backupFolder = defaultBackupFolder
 
-	fmt.Println("Remakable Tablet backup utility v%s", rmkdumpVersion)
+	fmt.Printf("Remakable Tablet backup utility v%s\n", rmkdumpVersion)
 
-	if len(os.Args) != 2 {
+	if len(os.Args) == 2 {
 		backupFolder = os.Args[1]
 	}
 
